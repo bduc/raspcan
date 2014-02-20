@@ -5,7 +5,7 @@
       <paths name="raspberrypi">
         <serverdata>
           <mappings>
-            <mapping deploy="raspcan" local="$PROJECT_DIR$" web="/" />
+            <mapping deploy="/raspcan" local="$PROJECT_DIR$" web="/" />
           </mappings>
         </serverdata>
       </paths>

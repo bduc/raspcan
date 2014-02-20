@@ -2,6 +2,7 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
+      <module fileurl="file://$PROJECT_DIR$/../libcanopen/.idea/libcanopen.iml" filepath="$PROJECT_DIR$/../libcanopen/.idea/libcanopen.iml" />
       <module fileurl="file://$PROJECT_DIR$/.idea/raspcan.iml" filepath="$PROJECT_DIR$/.idea/raspcan.iml" />
     </modules>
   </component>
