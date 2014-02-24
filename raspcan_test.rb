@@ -54,12 +54,98 @@ class CanFrame < BinData::Record
     (can_id & CAN_EFF_FLAG) == CAN_EFF_FLAG
   end
 
+  def standard?
+    ! eff?
+  end
+
+  def rtr?
+    (can_id & CAN_RTR_FLAG) == CAN_RTR_FLAG
+  end
+
   def node_id
-    can_id && ( eff? ? CAN_EFF_MASK : CAN_SFF_MASK )
+    can_id & ( eff? ? CAN_EFF_MASK : CAN_SFF_MASK )
+  end
+
+  def inspect
+    "<CanFrame: ID:0x#{node_id.to_s(16)} DLC:#{dlc} DATA:#{data.inspect} >"
   end
 end
 
+class InvalidFunctionCode < StandardError; end
+
 class CanOpenFrame < CanFrame
+
+  FUNCTION_CODES = {
+    unknown:   nil,
+    nmt_mc:    0x00,
+    emergency: 0x01,
+    sync:      0x01,
+    timestamp: 0x02,
+    pdo_1_tx:  0x03,
+    pdo_1_rx:  0x04,
+    pdo_2_tx:  0x05,
+    pdo_2_rx:  0x06,
+    pdo_3_tx:  0x07,
+    pdo_3_rx:  0x08,
+    pdo_4_tx:  0x09,
+    pdo_4_rx:  0x0a,
+    sdo_tx:    0x0b,
+    sdo_rx:    0x0c,
+    nmt_ng:    0x0e
+  }
+
+  NMT_MC = {
+    start:     0x01,
+    stop:      0x02,
+    preop:     0x80,
+    reset_app: 0x81,
+    reset_com: 0x82
+  }
+
+  NMT_NG = {
+    bootup:         0x00,
+    disconnected:   0x01,
+    connected:      0x02,
+    preparing:      0x03,
+    stopped:        0x04,
+    operational:    0x05,
+    preoperational: 0x7F
+  }
+
+  def function_code
+    standard? ? ((can_id & 0x00000780) >> 7) : nil
+  end
+
+  def function_code?( code_or_symbol )
+    if code_or_symbol.is_a?(Symbol)
+      function_code_ == code_or_symbol
+    else
+      function_code == code_or_symbol
+    end
+  end
+
+  FUNCTION_CODES.keys.each do |code|
+    define_method :"#{code}?" do
+      function_code?(code)
+    end
+  end
+
+  def function_code_
+    FUNCTION_CODES.invert[function_code] || raise(InvalidFunctionCode.new(function_code.to_s(16)))
+  end
+
+  def node_id
+    standard? ? (can_id & 0x0000007F) : node_id
+  end
+
+  def inspect
+    if standard?
+      "<CanOpenFrame: FC:0x#{function_code.to_s(16)}:#{function_code_} ID:0x#{node_id.to_s(16)} #{rtr? ? 'RTR ':' '}DLC:#{dlc} DATA:#{data.inspect}>"
+    else
+      "<CanOpenFrame: EXTENDED ID:0x#{node_id.to_s(16)} "
+    end
+  end
+
 end
 
 interface = 'can0'
@@ -83,8 +169,10 @@ while true do
   cf = CanFrame.read(data)
   now = Time.now.to_f
   puts now, (now - (prev||0)), data.unpack('H*')[0]
-  puts cf.node, cf.inspect
-  puts cof.inspect
+  p cf
+  p cof
+  p cof.sdo_tx?
+  p cof.sdo_rx?
   prev = now
   #can_frame = CanFrame.read(socket)
   #p can_frame
