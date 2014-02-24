@@ -32,6 +32,7 @@
     <orderEntry type="library" scope="PROVIDED" name="bindata (v2.0.0, Remote:ruby-2.1.0-p0) [gem]" level="application" />
     <orderEntry type="library" scope="PROVIDED" name="bundler (v1.5.3, Remote:ruby-2.1.0-p0) [gem]" level="application" />
     <orderEntry type="library" scope="PROVIDED" name="eventmachine (v1.0.3, Remote:ruby-2.1.0-p0) [gem]" level="application" />
+    <orderEntry type="module" module-name="rasp_usr_include" />
   </component>
 </module>
 

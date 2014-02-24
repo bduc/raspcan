@@ -1,7 +1,6 @@
 require 'rubygems'
 require 'bundler/setup'
 
-require 'bindata'
 require 'eventmachine'
 
 require 'socket'
@@ -9,34 +8,50 @@ require_relative './can_open'
 
 puts "Version #{CanOpen::VERSION} Platform "+ RUBY_PLATFORM
 
-PF_CAN=29
-AF_CAN=PF_CAN
-CAN_RAW=1
-SIOCGIFINDEX=0x8933
+class CanSocket < Socket
 
-class Ifreq < BinData::Record
-  endian :little
-  string :name, :length => 16
-  int32  :ifindex
-end
+  PF_CAN=29
+  AF_CAN=PF_CAN
+  CAN_RAW=1
+  SIOCGIFINDEX=0x8933
 
-class SockaddrCan < BinData::Record
-  endian :little
-  uint16  :family
-  int32  :ifindex
-  struct :addr do
-    uint32 :rx_id
-    uint32 :tx_id
+  def initialize( can_interface_name )
+
+    super(PF_CAN, Socket::SOCK_RAW, CAN_RAW)
+
+    #socket = Socket.open(PF_CAN, Socket::SOCK_RAW, CAN_RAW)
+
+    # struct ifreq in net/if.h
+    if_idx_req = can_interface_name.ljust(16,"\0")+[0].pack("L")
+    ioctl(SIOCGIFINDEX, if_idx_req )
+
+    if_name,if_index = if_idx_req.unpack("A16L")
+
+    # sockaddr_can from linux/can.h
+    #struct sockaddr_can {
+    #  __kernel_sa_family_t can_family;                                     S
+    #  int         can_ifindex;                                             l
+    #  union {
+    #    /* transport protocol class address information (e.g. ISOTP) */
+    #    struct { canid_t rx_id, tx_id; } tp;                               LL
+    #
+    #    /* reserved for future CAN protocols address information */
+    #  } can_addr;
+    #};
+    # align on 16 byte -> pad with 2 bytes exta                             S
+
+    sockaddr_can = [AF_CAN,if_index,0,0,0].pack("SlLLS")
+
+    bind(sockaddr_can)
   end
-  uint16 :dummy  # 16 byte alignment
+
 end
 
-class CanFrame < BinData::Record
-  endian :little
-  uint32 :can_id
-  uint8  :dlc
-  array  :dummy1, :type => :uint8, :initial_length => 3
-  array  :data,   :type => :uint8, :initial_length => 8
+
+class InvalidFunctionCode < StandardError; end
+
+class CanFrame
+  attr_reader :can_id, :dlc, :data
 
   CAN_EFF_FLAG = 0x80000000
   CAN_RTR_FLAG = 0x40000000
@@ -45,6 +60,18 @@ class CanFrame < BinData::Record
   CAN_SFF_MASK = 0x000007FF
   CAN_EFF_MASK = 0x1FFFFFFF
   CAN_ERR_MASK = 0x1FFFFFFF
+
+  def initialize( data_frame = nil )
+    if data_frame
+      raise InvalidFrameLength.new(data_frame.size) unless data_frame.size == 16
+    end
+    data = data_frame.unpack("LCC3C8")
+
+    @can_id = data[0]
+    @dlc    = data[1]
+    @data   = data[-8..-1]
+  end
+
 
   def err?
     (can_id & CAN_ERR_FLAG) == CAN_ERR_FLAG
@@ -72,6 +99,7 @@ class CanFrame < BinData::Record
 end
 
 class InvalidFunctionCode < StandardError; end
+class InvalidNmtMcCommand < StandardError; end
 
 class CanOpenFrame < CanFrame
 
@@ -92,14 +120,6 @@ class CanOpenFrame < CanFrame
     sdo_tx:    0x0b,
     sdo_rx:    0x0c,
     nmt_ng:    0x0e
-  }
-
-  NMT_MC = {
-    start:     0x01,
-    stop:      0x02,
-    preop:     0x80,
-    reset_app: 0x81,
-    reset_com: 0x82
   }
 
   NMT_NG = {
@@ -138,9 +158,62 @@ class CanOpenFrame < CanFrame
     standard? ? (can_id & 0x0000007F) : node_id
   end
 
+  class Unknown
+    def initialize( data )
+      @data = data
+    end
+    def inspect
+      "UNKNOWN"
+    end
+  end
+
+  class NmtMc
+    COMMANDS = {
+        start:     0x01,
+        stop:      0x02,
+        preop:     0x80,
+        reset_app: 0x81,
+        reset_com: 0x82
+    }
+
+    def initialize( data )
+      @data = data
+      @data = @data.unpack("C8") if @data.respond_to?(:unpack)
+    end
+
+    def command
+      @data[0]
+    end
+
+    def command_
+      COMMANDS.invert[command] || raise(InvalidNmtMcCommand.new(command.to_s(16)))
+    end
+
+    def node_id
+      @data[1]
+    end
+
+    def inspect
+      "NMT MC #{command_} NODE: 0x#{node_id.to_s(16)}"
+    end
+
+  end
+
+  def function_object
+    case function_code_
+      when :nmt_mc
+        NmtMc.new( data )
+      else
+        Unknown.new( data )
+    end
+  end
+
   def inspect
     if standard?
-      "<CanOpenFrame: FC:0x#{function_code.to_s(16)}:#{function_code_} ID:0x#{node_id.to_s(16)} #{rtr? ? 'RTR ':' '}DLC:#{dlc} DATA:#{data.inspect}>"
+
+      function_details = function_object.inspect
+
+      "<CanOpenFrame: FC:0x#{function_code.to_s(16)}:#{function_code_} ID:0x#{node_id.to_s(16)} #{rtr? ? 'RTR ':' '}DLC:#{dlc} DATA:#{data.inspect} #{function_object.inspect}>"
     else
       "<CanOpenFrame: EXTENDED ID:0x#{node_id.to_s(16)} "
     end
@@ -148,34 +221,19 @@ class CanOpenFrame < CanFrame
 
 end
 
-interface = 'can0'
-
-socket = Socket.open(PF_CAN, Socket::SOCK_RAW, CAN_RAW)
-
-# struct ifreq in net/if.h
-ifreq= Ifreq.new :name => interface
-socket.ioctl(SIOCGIFINDEX, ifreq.to_binary_s)
-
-addr = SockaddrCan.new(:family => AF_CAN, :ifindex => ifreq.ifindex)
-
-addr.to_binary_s.length
-socket.bind(addr.to_binary_s)
+socket = CanSocket.new( 'can0' )
 
 puts "Waiting..."
 prev = nil
 while true do
   data = socket.read(16)
-  cof = CanOpenFrame.read(data)
-  cf = CanFrame.read(data)
+  cof = CanOpenFrame.new(data)
   now = Time.now.to_f
   puts now, (now - (prev||0)), data.unpack('H*')[0]
-  p cf
   p cof
   p cof.sdo_tx?
   p cof.sdo_rx?
   prev = now
-  #can_frame = CanFrame.read(socket)
-  #p can_frame
 end
 
 
