@@ -29,10 +29,27 @@
     <orderEntry type="jdk" jdkName="Remote:ruby-2.1.0-p0" jdkType="RUBY_SDK" />
     <orderEntry type="sourceFolder" forTests="false" />
     <orderEntry type="module" module-name="libcanopen" />
-    <orderEntry type="library" scope="PROVIDED" name="bindata (v2.0.0, Remote:ruby-2.1.0-p0) [gem]" level="application" />
-    <orderEntry type="library" scope="PROVIDED" name="bundler (v1.5.3, Remote:ruby-2.1.0-p0) [gem]" level="application" />
-    <orderEntry type="library" scope="PROVIDED" name="eventmachine (v1.0.3, Remote:ruby-2.1.0-p0) [gem]" level="application" />
     <orderEntry type="module" module-name="rasp_usr_include" />
+    <orderEntry type="library" scope="PROVIDED" name="bundler (v1.5.3, Remote:ruby-2.1.0-p0) [gem]" level="application" />
+    <orderEntry type="library" scope="PROVIDED" name="celluloid (v0.15.2, Remote:ruby-2.1.0-p0) [gem]" level="application" />
+    <orderEntry type="library" scope="PROVIDED" name="celluloid-io (v0.15.0, Remote:ruby-2.1.0-p0) [gem]" level="application" />
+    <orderEntry type="library" scope="PROVIDED" name="coderay (v1.1.0, Remote:ruby-2.1.0-p0) [gem]" level="application" />
+    <orderEntry type="library" scope="PROVIDED" name="eventmachine (v1.0.3, Remote:ruby-2.1.0-p0) [gem]" level="application" />
+    <orderEntry type="library" scope="PROVIDED" name="ffi (v1.9.3, Remote:ruby-2.1.0-p0) [gem]" level="application" />
+    <orderEntry type="library" scope="PROVIDED" name="formatador (v0.2.4, Remote:ruby-2.1.0-p0) [gem]" level="application" />
+    <orderEntry type="library" scope="PROVIDED" name="guard (v2.5.1, Remote:ruby-2.1.0-p0) [gem]" level="application" />
+    <orderEntry type="library" scope="PROVIDED" name="guard-process (v1.0.6, Remote:ruby-2.1.0-p0) [gem]" level="application" />
+    <orderEntry type="library" scope="PROVIDED" name="listen (v2.6.2, Remote:ruby-2.1.0-p0) [gem]" level="application" />
+    <orderEntry type="library" scope="PROVIDED" name="lumberjack (v1.0.4, Remote:ruby-2.1.0-p0) [gem]" level="application" />
+    <orderEntry type="library" scope="PROVIDED" name="method_source (v0.8.2, Remote:ruby-2.1.0-p0) [gem]" level="application" />
+    <orderEntry type="library" scope="PROVIDED" name="nio4r (v1.0.0, Remote:ruby-2.1.0-p0) [gem]" level="application" />
+    <orderEntry type="library" scope="PROVIDED" name="pry (v0.9.12.6, Remote:ruby-2.1.0-p0) [gem]" level="application" />
+    <orderEntry type="library" scope="PROVIDED" name="rb-fsevent (v0.9.4, Remote:ruby-2.1.0-p0) [gem]" level="application" />
+    <orderEntry type="library" scope="PROVIDED" name="rb-inotify (v0.9.3, Remote:ruby-2.1.0-p0) [gem]" level="application" />
+    <orderEntry type="library" scope="PROVIDED" name="slop (v3.4.7, Remote:ruby-2.1.0-p0) [gem]" level="application" />
+    <orderEntry type="library" scope="PROVIDED" name="spoon (v0.0.4, Remote:ruby-2.1.0-p0) [gem]" level="application" />
+    <orderEntry type="library" scope="PROVIDED" name="thor (v0.18.1, Remote:ruby-2.1.0-p0) [gem]" level="application" />
+    <orderEntry type="library" scope="PROVIDED" name="timers (v1.1.0, Remote:ruby-2.1.0-p0) [gem]" level="application" />
   </component>
 </module>
 
